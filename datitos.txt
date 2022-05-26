@@ -1,0 +1,4 @@
+user database : shortcutApp
+password      :  HMwKyLqHW5on2BYE
+
+info connection database mongo :  mongodb+srv://<username>:<password>@cluster0.rbekc.mongodb.net/?retryWrites=true&w=majority
