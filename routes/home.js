@@ -1,14 +1,13 @@
 const express = require("express")
+const { leerUrls, agregarUrl, eliminarUrl, editarUrlForm, editarUrl } = require("../controllers/homeController")
+const validarURL = require("../middlewares/urlValida")
 const router = express.Router() 
 
-router.get("/", (req, res) => {
-    const url = [
-        {url : "www.dani-div.co1", short : "uiwcwe1"},
-        {url : "www.dani-div.co2", short : "uiwcwe2"},
-        {url : "www.dani-div.co3", short : "uiwcwe3"},
-    ];
-    res.render('home',{ url })
-})
+router.get("/", leerUrls)
+router.post("/", validarURL, agregarUrl)
+router.get("/eliminar/:id", eliminarUrl)
+router.get("/editar/:id", editarUrlForm)
+router.post("/editar/:id", validarURL, editarUrl)
 
 
 
