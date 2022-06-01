@@ -61,10 +61,21 @@ const editarUrl = async (req, res) => {
     }
 }
 
+const redireccionamiento = async (req, res) => {
+    const {shortUrl} = req.params
+    try {
+        const urlDB = await Url.findOne({ shortUrl: shortUrl })
+        res.redirect(urlDB.origin)
+    } catch (error) {
+        
+    }
+}
+
 module.exports = {
     leerUrls,
     agregarUrl,
     eliminarUrl,
     editarUrlForm,
-    editarUrl
+    editarUrl,
+    redireccionamiento
 }

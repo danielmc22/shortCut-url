@@ -1,10 +1,33 @@
 const express = require("express");
+const session = require("express-session")
+const flash = require("connect-flash")
+const passport = require("passport")
 const { create } = require("express-handlebars");
 require("dotenv").config();   //para que se lean las variables de entorno
 require("./database/db")     // para que se lea la conexión a la db
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
+const userModel = require("./models/userModel");
 
 const app = express();
+
+app.use(session({
+    secret: "keyboard dog",
+    resave: false,
+    saveUninitialized: false,
+    name: "secret-name-holi"
+}))
+
+app.use(flash())
+//--------------------------------------------------------------------------- sesion con passport configuracion
+app.use(passport.initialize())
+app.use(passport.session())
+
+passport.serializeUser((user, done ) => done(null, {id: user._id, userName: user.userName}) ) //con esto se crea la session
+passport.deserializeUser(async(user, done) => {
+    const userDB = await userModel.findById(user.id)
+    return done(null, {id: userDB._id, userName: userDB.userName})
+})
+//--------------------------------------------------------------------------
 
 const hbs = create({
     extname: ".hbs",

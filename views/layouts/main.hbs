@@ -13,6 +13,12 @@
     {{> navbar }}
 
     <div class="container mt-3">
+
+
+        {{#each mensajes}}
+            <div class="alert alert-secondary mb-2">{{this.msg}}</div>
+        {{/each}}
+
     {{{body}}}
     </div>
     
