@@ -3,19 +3,37 @@ const session = require("express-session")
 const flash = require("connect-flash")
 const passport = require("passport")
 const { create } = require("express-handlebars");
+const MongoStore = require("connect-mongo")
+const mongoSanitize = require("express-mongo-sanitize");
 const csrf = require("csurf")
+const cors = require("cors")
 require("dotenv").config();   //para que se lean las variables de entorno
-require("./database/db")     // para que se lea la conexión a la db
+const clientDB = require("./database/db")
 const bodyParser = require('body-parser');
 const userModel = require("./models/userModel");
 
 const app = express();
 
+const corsOptions = {
+    credentials: true,
+    origin: process.env.PATHHEROKU || "*",
+    methods: ["GET", "POST"],
+};
+
+app.use(cors())
 app.use(session({
-    secret: "keyboard dog",
+    secret: process.env.SECRETSESSION,
     resave: false,
     saveUninitialized: false,
-    name: "secret-name-holi"
+    name: "secret-name-holi",
+    store: MongoStore.create({
+        clientPromise: clientDB,
+        dbName: process.env.DBNAME
+    }),
+    cookie: {
+        secure: process.env.MODO === "production",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+    },
 }))
 
 app.use(flash())
@@ -45,6 +63,7 @@ app.use(express.static(__dirname + "/public"));
 app.use(bodyParser.urlencoded({ extended: true }))
 
 app.use(csrf())
+app.use(mongoSanitize());
 
 app.use((req, res, next) => {
     res.locals.csrfToken = req.csrfToken()

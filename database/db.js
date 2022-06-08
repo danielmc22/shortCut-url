@@ -1,8 +1,14 @@
 const mongoose = require("mongoose")
+require("dotenv").config()
 
-mongoose
+
+const clientDB = mongoose
     .connect(process.env.URI)
-    .then(() => console.log("db connected 🐽 "))
+    .then((m) => {
+        console.log("Db conectada 💕");
+        return m.connection.getClient();
+    })
     .catch(e => console.log("falló la conexión " + e))
 
+module.exports = clientDB
 // CONFIG BÁSICA PARA CONECTARNOS A LA BASE DE DATOS

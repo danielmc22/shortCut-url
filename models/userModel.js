@@ -26,7 +26,7 @@ const userSchema = new Schema({
     },
     cuentaConfirmada: {
         type: Boolean,
-        default: false
+        default: true
     },
     imagen: {
         type: String,
