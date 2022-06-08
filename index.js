@@ -3,6 +3,7 @@ const session = require("express-session")
 const flash = require("connect-flash")
 const passport = require("passport")
 const { create } = require("express-handlebars");
+const csrf = require("csurf")
 require("dotenv").config();   //para que se lean las variables de entorno
 require("./database/db")     // para que se lea la conexión a la db
 const bodyParser = require('body-parser');
@@ -41,12 +42,21 @@ app.set("views", "./views");
 app.use(express.static(__dirname + "/public"));
 
 // parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({ extended: true }))
+
+app.use(csrf())
+
+app.use((req, res, next) => {
+    res.locals.csrfToken = req.csrfToken()
+    res.locals.mensajes = req.flash("mensajes")
+    next()
+})
 // parse application/json
 app.use(bodyParser.json())
 
 
 app.use(express.urlencoded({extended:true}))  // habilitaos los formularios
+ 
 app.use("/", require("./routes/home"))
 app.use("/auth", require("./routes/auth"))
 

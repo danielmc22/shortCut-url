@@ -1,15 +1,15 @@
 const Url = require("../models/url")
 const {nanoid}  = require("nanoid")
-const { findByIdAndDelete } = require("../models/url")
+const { findByIdAndDelete, findById } = require("../models/url")
 
 const leerUrls = async (req, res) => {
     try {
-        const urlx = await Url.find().lean()
+        const urlx = await Url.find({user: req.user.id}).lean()
         res.render("home",{ url: urlx })
           
     } catch (error) {
-        console.log(error)
-        res.send("algo falló controller leer url")
+        req.flash("mensajes", [{msg: error.message}])
+        return res.redirect("/")
     }
 }
 
@@ -17,24 +17,30 @@ const agregarUrl = async (req, res) => {
     const {origin} = req.body
 
     try {
-        const url = new Url({ origin:origin, shortUrl: nanoid(8) })
+        const url = new Url({ origin:origin, shortUrl: nanoid(8), user: req.user.id })
         await url.save()
         res.redirect("/")
+        req.flash("mensajes", [{msg: "URL agregada"}])
     } catch (error) {
-        console.log(error)
-        res.send("error algo falló")
+        req.flash("mensajes", [{msg: error.message}])
+        return res.redirect("/")
     }
 }
 
 const eliminarUrl = async (req, res ) => {
     const {id} = req.params
     try {
-        await Url.findByIdAndDelete(id)
-        res.redirect("/")
+        const url = await Url.findById(id)
+        if(!url.user.equals(req.user.id)) {
+            throw new Error()
+        }
+        await Url.remove()
+        req.flash("mensajes", [{msg: "URL Eliminada"}])
+        return res.redirect("/")
         
     } catch (error) {
-        console.log(error)
-        res.send("error en eliminarUrl controller")
+        req.flash("mensajes", [{msg: error.message}])
+        return res.redirect("/")
     }
 }
 
@@ -42,10 +48,13 @@ const editarUrlForm = async (req, res) => {
     const {id} = req.params
     try {
         const urlx = await Url.findById(id).lean()
-        res.render("home", {urlx})
+        if(!urlx.user.equals(req.user.id)) {
+            throw new Error()
+        }
+        return res.render("home", {urlx})
     } catch (error) {
-        console.log(error)
-        res.send("Algo falló editarUrl controller")
+        req.flash("mensajes", [{msg: error.message}])
+        return res.redirect("/")
     }
 }
 
@@ -53,11 +62,18 @@ const editarUrl = async (req, res) => {
     const {id} = req.params
     const {origin} = req.body
     try {
-        await Url.findByIdAndUpdate(id, {origin: origin})
+        const urlf = await Url.findById(id)
+        if(!urlf.user.equals(req.user.id)) {
+            throw new Error("No es tu URL")
+        }
+        await urlf.updateOne({ origin })
+        req.flash("mensajes", [{msg: "URL Editada"}])
+
+        /* await Url.findByIdAndUpdate(id, {origin: origin}) */
         res.redirect("/")
     } catch (error) {
-        console.log(error)
-        res.send("Algo falló editarUrl controller")
+        req.flash("mensajes", [{msg: error.message}])
+        return res.redirect("/")
     }
 }
 
@@ -67,7 +83,8 @@ const redireccionamiento = async (req, res) => {
         const urlDB = await Url.findOne({ shortUrl: shortUrl })
         res.redirect(urlDB.origin)
     } catch (error) {
-        
+        req.flash("mensajes", [{msg: "no existe esta url configurada"}])
+        return res.redirect("/")
     }
 }
 

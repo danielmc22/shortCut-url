@@ -1,9 +1,11 @@
 const userModel = require("../models/userModel");
 const {validationResult} = require("express-validator")
 const {nanoid} = require("nanoid")
+const nodemailer = require("nodemailer")
+require("dotenv").config()
 
 const registerForm = (req, res) => {
-    res.render("register", {mensajes: req.flash("mensajes")})
+    res.render("register")
 };
 
 //Este controller guarda la info del form en la DB   -   Siempre que se trabaje con DB debe ser ASYNC y AWAIT
@@ -24,38 +26,33 @@ const registerUser = async (req, res) => {
         await user.save()
 
         //enviar correo electrónico con confirmacion de cuenta
+        const transport = nodemailer.createTransport({
+            host: "smtp.mailtrap.io",
+            port: 2525,
+            auth: {
+              user: process.env.userEmail,
+              pass: process.env.passEmail
+            }
+          });
+
+          await transport.sendMail({
+            from: '"🙌" twitch@ignaciogutierrez.cl', // sender address
+            to: user.email, // list of receivers
+            subject: "Verifica tu cuenta de correo", // Subject line
+            html: `<a href="http://localhost:5000/auth/confirmarCuenta/${user.tokenConfirm}"> Verifica tu cuenta aquí </a>`, // html body
+        });
+
         req.flash("mensajes", [{msg: "Revisa tu email y verifica tu cuenta"}])
-        res.redirect("/auth/login")
+        return res.redirect("/auth/login")
+
     } catch (error) {
         req.flash("mensajes", [{msg: error.message}])
         return res.redirect("/auth/register") 
     }
 };
 
-const confirmarCuenta = async (req, res) => {
-    const {token} = req.params
-
-    try {
-        const user = await userModel.findOne({ tokenConfirm: token })
-        if (!user) throw new Error ("No existe este usuario")
-
-        user.cuentaConfirmada = true
-        user.tokenConfirm = null
-        await user.save()
-
-        req.flash("mensajes", [{msg: "Cuenta verificada, puedes iniciar sessión"}])
-        res.redirect("/auth/login")
-
-        return res.redirect("/auth/login")
-
-    } catch (error) {
-        req.flash("mensajes", [{msg: error.message}])
-        return res.redirect("/auth/login")
-    }
-};
-
 const loginForm = (req, res) => {
-    res.render("login", {mensajes: req.flash("mensajes")})
+    res.render("login")
 };
 
 const loginUser = async (req, res) => {
@@ -86,6 +83,28 @@ const loginUser = async (req, res) => {
         return res.redirect("/auth/login")
     }
 };
+
+const confirmarCuenta = async (req, res) => {
+    const {token} = req.params
+
+    try {
+        const user = await userModel.findOne({ tokenConfirm: token })
+        if (!user) throw new Error ("No existe este usuario")
+
+        user.cuentaConfirmada = true
+        user.tokenConfirm = null
+        await user.save()
+
+        req.flash("mensajes", [{msg: "Cuenta verificada, puedes iniciar sessión"}])
+
+        return res.redirect("/auth/login")
+
+    } catch (error) {
+        req.flash("mensajes", [{msg: error.message}])
+        return res.redirect("/auth/login")
+    }
+};
+
 
 const cerrarSesion = (req, res) => {
     req.logout(() => {})
